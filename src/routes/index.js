@@ -13,7 +13,6 @@ class Router {
         this.table = hashTable;
         this.port = config.PORT;
         this.id_max = config.ID_MAX;
-        this.tableLock = false;
 
         this.node = {
             url: config.URL,
@@ -21,26 +20,6 @@ class Router {
         }
         this.nodeTable = [this.node];
         this.counter = 0;
-        this.app.all("*", async function(req, res, next) {
-            if (req.path === "/lock") {
-                this.tableLock = true;
-                res.send("locked");
-                return;
-            }
-            if (req.path === "/unlock") {
-                this.tableLock = false;
-                res.send("unlocked");
-                return;
-            }
-            if (this.tableLock) {
-                res.send("Table is locked");
-                return;
-            }
-            next();
-        }.bind(this));
-
-        // this.app.post("/lock", this.lock.bind(this));
-        // this.app.post("unlock", this.unlock.bind(this));
 
         this.app.post("/join", this.join.bind(this));
         this.app.get("/node_table", this.node_table.bind(this));
@@ -59,16 +38,6 @@ class Router {
 
         this.app.post("/delete", this.delete.bind(this));
     }
-
-    // lock(req, res) {
-    //     this.tableLock = true;
-    //     res.send("locked");
-    // }
-
-    // unlock(req, res) {
-    //     this.tableLock = false;
-    //     res.send("unlucked");
-    // }
 
     async delete(req, res) {
         if (!req.body.key) {
