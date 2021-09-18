@@ -17,17 +17,23 @@ const test = async function(){
         await axios.post("http://localhost:3000/insert", {
             "key": "my_video.mp4",
             "lock_type": "write"
-        })
+        }).then(function(response){
+            console.log(response.data);
+        });
 
         await axios.post("http://localhost:3000/insert", {
             "key": "my_video1234.mp4",
             "lock_type": "write"
-        })
+        }).then(function(response){
+            console.log(response.data);
+        });
 
         await axios.post("http://localhost:3000/insert", {
             "key": "my_video5678.mp4",
             "lock_type": "write"
-        })
+        }).then(function(response){
+            console.log(response.data);
+        });
 
         await axios.get("http://localhost:3000/lookup?key=my_video5678.mp4").then(function(response) {
             console.log(response.data);
