@@ -1,6 +1,5 @@
 'use strict';
 const HashTable = require("./src/hash_table");
-const config = require("./src/config");
 const Router = require("./src/routes");
 require('dotenv').config()
 
