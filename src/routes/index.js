@@ -244,7 +244,7 @@ class Router {
 
     async listen() {
         this.app.listen(this.port, function(){
-            console.log("Listening on port " + this.port.toString());
+            console.log("DHT Node Listening on port " + this.port.toString());
         }.bind(this));
     }
 
