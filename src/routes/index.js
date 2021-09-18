@@ -174,7 +174,11 @@ class Router {
             res.send("Error: missing key in request query");
             return;
         }
-        this.table.insert(req.body.key, req.body.value);
+        const response = this.table.insert(req.body.key, req.body.value);
+        if (response == -1) {
+            res.status(400).send("Error: Key already exists");
+            return;
+        }
         res.send("Success");
     }
 

@@ -1,12 +1,12 @@
 'use strict';
 var path = require("path");
-require('dotenv').config()
 
-const args = process.argv.slice(2)
-module.exports = {
-    "PORT": args[0] || 3000,
-    "URL": args[1] + ":" + args[0],
-    "ID": args[2],
-    "ID_MAX": process.env.ID_MAX,
-    "DATA_DIR": path.join(process.env.DATA_DIR, '/' + args[2])
+module.exports = function(port, url, id, id_max, data_dir){
+    return {
+        "PORT": port,
+        "URL": url,
+        "ID": id,
+        "ID_MAX": id_max,
+        "DATA_DIR": path.join(data_dir, '/' + id)
+    };
 }
