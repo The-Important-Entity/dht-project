@@ -3,6 +3,8 @@ const { request } = require("express");
 const express = require("express");
 const axios = require('axios');
 const ceil_bsearch = require('./ceil_bsearch.js');
+const FileManager = require('./FileManager.js');
+const Requester = require('./Requester.js');
 
 class Router {
     constructor(hashTable, config) {
@@ -13,14 +15,22 @@ class Router {
         this.table = hashTable;
         this.port = config.PORT;
         this.id_max = config.ID_MAX;
+        this.FileManager = new FileManager(config.DATA_DIR);
+        this.Requester = new Requester();
 
         this.node = {
             url: config.URL,
             id: config.ID
         }
-        this.nodeTable = [this.node];
-        this.counter = 0;
-
+        var temp = this.FileManager.getNodes();
+        if (temp.length > 0) {
+            this.nodeTable = temp;
+        }
+        else {
+            this.nodeTable = [this.node];
+            this.FileManager.writeNodes(this.nodeTable);
+        }
+        this.stabilize();
         this.app.post("/join", this.join.bind(this));
         this.app.get("/node_table", this.node_table.bind(this));
 
@@ -46,10 +56,20 @@ class Router {
         }
         const hash = this.table.getHashCode(req.body.key);
         const bind_index = hash % this.id_max;
-        const node_index = ceil_bsearch(this.nodeTable, bind_index);
 
-        const response = await axios.delete(this.nodeTable[node_index].url + "/bind?key=" + req.body.key);
-        res.send(response.data);
+        const node_index = ceil_bsearch(this.nodeTable, bind_index);
+        const node_succ = (node_index + 1)%this.nodeTable.length;
+        const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+
+        const response1 = await this.Requester.delete(this.nodeTable[node_index].url + "/bind?key=" + req.body.key);
+        const response2 = await this.Requester.delete(this.nodeTable[node_succ].url + "/bind?key=" + req.body.key);
+        const response3 = await this.Requester.delete(this.nodeTable[node_pred].url + "/bind?key=" + req.body.key);
+        if (response1.error != "none" && response2.error != "none" && response3.error != "none") {
+            res.send("Failed");
+        }
+        else {
+            res.send("Success");
+        }
     }
 
     async delete_bind(req, res) {
@@ -68,13 +88,40 @@ class Router {
         }
         const hash = this.table.getHashCode(req.body.key);
         const bind_index = hash % this.id_max;
-        const node_index = ceil_bsearch(this.nodeTable, bind_index);
 
-        const response = await axios.post(this.nodeTable[node_index].url + "/bind", {
+        const node_index = ceil_bsearch(this.nodeTable, bind_index);
+        const node_succ = (node_index + 1)%this.nodeTable.length;
+        const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+
+        const response1 = await this.Requester.post(this.nodeTable[node_index].url + "/bind", {
             "key": req.body.key,
-            "value": req.body.lock_type
+            "value": {
+                "lock_type": req.body.lock_type,
+                "state": "main"
+            }
         });
-        res.send(response.data);
+
+        const response2 = await this.Requester.post(this.nodeTable[node_succ].url + "/bind", {
+            "key": req.body.key,
+            "value": {
+                "locak_type": req.body.lock_type,
+                "state": "replica"
+            }
+        });
+
+        const response3 = await this.Requester.post(this.nodeTable[node_pred].url + "/bind", {
+            "key": req.body.key,
+            "value": {
+                "locak_type": req.body.lock_type,
+                "state": "replica"
+            }
+        });
+        if (response1.error != "none" && response2.error != "none" && response3.error != "none") {
+            res.send("Failed");
+        }
+        else {
+            res.send("Success");
+        }
     }
 
     async lookup(req, res) {
@@ -84,9 +131,29 @@ class Router {
         }
         const hash = this.table.getHashCode(req.query.key);
         const bind_index = hash % this.id_max;
+
         const node_index = ceil_bsearch(this.nodeTable, bind_index);
-        const response = await axios.get(this.nodeTable[node_index].url + "/binding?key=" + req.query.key)
-        res.send(response.data);
+        const node_succ = (node_index + 1)%this.nodeTable.length;
+        const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+
+        const response1 = await this.Requester.get(this.nodeTable[node_index].url + "/binding?key=" + req.query.key);
+        if (response1.error == "none") {
+            res.send(response1.response);
+            return;
+        }
+
+        const response2 = await this.Requester.get(this.nodeTable[node_succ].url + "/binding?key=" + req.query.key);
+        if (response2.error == "none") {
+            res.send(response2.response);
+            return;
+        }
+
+        const response3 = await this.Requester.get(this.nodeTable[node_pred].url + "/binding?key=" + req.query.key);
+        if (response3.error == "none") {
+            res.send(response3.response);
+            return;
+        }
+        res.send("Failed");
     }
 
     async get_binding(req, res) {
@@ -136,6 +203,7 @@ class Router {
         
         this.nodeTable = this.nodeTable.concat(response.data);
         this.sortNodeTable();
+        this.FileManager.writeNodes(this.nodeTable);
         this.notifyAll();
         res.send("Success");
     }
@@ -147,6 +215,7 @@ class Router {
         }
 
         this.nodeTable = req.body.nodeTable;
+        this.FileManager.writeNodes(this.nodeTable);
         res.send("Success");
     }
 
@@ -173,6 +242,57 @@ class Router {
         this.app.listen(this.port, function(){
             console.log("Listening on port " + this.port.toString());
         }.bind(this));
+    }
+
+    async stabilize() {
+        const node_index = ceil_bsearch(this.nodeTable, this.node.id);
+        const node_succ = (node_index + 1)%this.nodeTable.length;
+        const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+
+        const response_succ = await this.Requester.get(this.nodeTable[node_succ].url + "/bindings");
+        const response_pred = await this.Requester.get(this.nodeTable[node_pred].url + "/bindings");
+
+        if (response_succ.error == "none"){
+            for (var i = 0; i < response_succ.response.length; i++) {
+                const binding = response_succ.response[i];
+
+                const hash = this.table.getHashCode(binding.key);
+                const bind_index = hash % this.id_max;
+                const node_index = ceil_bsearch(this.nodeTable, bind_index);
+                const node_succ = (node_index + 1)%this.nodeTable.length;
+                const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+                
+                var insert = false;
+                var replica = false;
+                if (this.nodeTable[node_index].id == this.node.id) {
+                    insert = true;
+                }
+                else if (this.nodeTable[node_succ].id == this.node.id) {
+                    insert = true;
+                    replica = true;
+                }
+                else if (this.nodeTable[node_pred].id == this.node.id) {
+                    insert = true;
+                    replica = true;
+                }
+                if (insert) {
+                    if (replica) {
+                        binding.value.state = 'replica'
+                    }
+                    else {
+                        binding.value.state = 'main'
+                    }
+                    this.table.insert(binding.key, binding.value);
+                }
+            }
+        }
+
+        if (response_pred.error == "none") {
+            for (var i = 0; i < response_pred.response.length; i++) {
+                this.table.insert(response_pred.response[i].key, response_pred.response[i].value);
+            }
+        }
+
     }
 }
 

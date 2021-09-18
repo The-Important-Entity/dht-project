@@ -2,17 +2,17 @@ const axios = require("axios");
 
 const test = async function(){
     try {
-        await axios.post("http://localhost:3000/join", {
-            "url": "http://localhost:3001"
-        }).then(function(response){
-            console.log(response.data);
-        });
+        // await axios.post("http://localhost:3000/join", {
+        //     "url": "http://localhost:3001"
+        // }).then(function(response){
+        //     console.log(response.data);
+        // });
     
-        await axios.post("http://localhost:3002/join", {
-            "url": "http://localhost:3001"
-        }).then(function(response){
-            console.log(response.data);
-        });
+        // await axios.post("http://localhost:3002/join", {
+        //     "url": "http://localhost:3001"
+        // }).then(function(response){
+        //     console.log(response.data);
+        // });
 
         await axios.post("http://localhost:3000/insert", {
             "key": "my_video.mp4",
