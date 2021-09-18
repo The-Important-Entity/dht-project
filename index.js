@@ -4,7 +4,7 @@ const Router = require("./src/routes");
 
 class DHT_Node {
     constructor(config) {
-        var table = new HashTable(config.size);
+        var table = new HashTable(config.SIZE);
         this.router = new Router(table, config);
     }
 

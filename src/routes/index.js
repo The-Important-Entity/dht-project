@@ -183,7 +183,6 @@ class Router {
     }
 
     async bindings(req, res) {
-        console.log(this.table.dumpElements());
         res.send(this.table.dumpElements());
     }
 

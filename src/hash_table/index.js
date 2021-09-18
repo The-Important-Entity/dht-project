@@ -77,7 +77,6 @@ class HashTable {
 
     dumpElements(){
         var res = [];
-
         for (var i = 0; i < this.table.length; i++) {
             if (this.table[i]) {
                 var elm = this.table[i].head;
