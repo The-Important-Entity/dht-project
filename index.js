@@ -1,7 +1,6 @@
 'use strict';
 const HashTable = require("./src/hash_table");
 const Router = require("./src/routes");
-require('dotenv').config()
 
 class DHT_Node {
     constructor(config) {
