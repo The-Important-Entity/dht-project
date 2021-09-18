@@ -104,7 +104,7 @@ class Router {
         const response2 = await this.Requester.post(this.nodeTable[node_succ].url + "/bind", {
             "key": req.body.key,
             "value": {
-                "locak_type": req.body.lock_type,
+                "lock_type": req.body.lock_type,
                 "state": "replica"
             }
         });
@@ -112,7 +112,7 @@ class Router {
         const response3 = await this.Requester.post(this.nodeTable[node_pred].url + "/bind", {
             "key": req.body.key,
             "value": {
-                "locak_type": req.body.lock_type,
+                "lock_type": req.body.lock_type,
                 "state": "replica"
             }
         });
