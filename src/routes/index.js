@@ -47,6 +47,9 @@ class Router {
         this.app.get("/binding", this.get_binding.bind(this));
 
         this.app.post("/delete", this.delete.bind(this));
+
+
+        this.app.get("/all_bindings", this.getAllBindings.bind(this));
     }
 
     async delete(req, res) {
@@ -95,9 +98,12 @@ class Router {
 
         const response1 = await this.Requester.post(this.nodeTable[node_index].url + "/bind", {
             "key": req.body.key,
+            "url": this.node.url,
             "value": {
                 "lock_type": req.body.lock_type,
-                "state": "main"
+                "state": "main",
+                "url": this.node.url,
+                "time": Date.now()
             }
         });
 
@@ -105,15 +111,20 @@ class Router {
             "key": req.body.key,
             "value": {
                 "lock_type": req.body.lock_type,
-                "state": "replica"
+                "state": "replica",
+                "url": this.node.url,
+                "time": Date.now()
             }
         });
 
         const response3 = await this.Requester.post(this.nodeTable[node_pred].url + "/bind", {
             "key": req.body.key,
+            "url": this.node.url,
             "value": {
                 "lock_type": req.body.lock_type,
-                "state": "replica"
+                "state": "replica",
+                "url": this.node.url,
+                "time": Date.now()
             }
         });
         if (response1.error != "none" && response2.error != "none" && response3.error != "none") {
@@ -240,6 +251,19 @@ class Router {
             return 1;
         });
 
+    }
+
+    async getAllBindings(req, res) {
+        var all = []
+        for (var i = 0; i < this.nodeTable.length; i++) {
+            const response = await axios.get(this.nodeTable[i].url + "/bindings");
+            for (var j = 0; j < response.data.length; j++) {
+                if (response.data[j].value.state == "main"){
+                    all.push(response.data[j]);
+                }
+            }
+        }
+        res.send(all);
     }
 
     async listen() {
