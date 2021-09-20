@@ -8,8 +8,14 @@ class DHT_Node {
         this.router = new Router(table, config);
     }
 
-    listen() {
-        this.router.listen();
+    start() {
+        try {
+            this.router.start();
+        }
+        catch(err) {
+            console.log(err);
+            throw err;
+        }
     }
 }
 
