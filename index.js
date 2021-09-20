@@ -8,9 +8,19 @@ class DHT_Node {
         this.router = new Router(table, config);
     }
 
-    start() {
+    async start() {
         try {
             this.router.start();
+        }
+        catch(err) {
+            console.log(err);
+            throw err;
+        }
+    }
+
+    async stop() {
+        try {
+            this.router.stop();
         }
         catch(err) {
             console.log(err);
