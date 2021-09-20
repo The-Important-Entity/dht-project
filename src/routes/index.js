@@ -256,11 +256,16 @@ class Router {
     async getAllBindings(req, res) {
         var all = []
         for (var i = 0; i < this.nodeTable.length; i++) {
-            const response = await axios.get(this.nodeTable[i].url + "/bindings");
-            for (var j = 0; j < response.data.length; j++) {
-                if (response.data[j].value.state == "main"){
-                    all.push(response.data[j]);
+            try {
+                const response = await axios.get(this.nodeTable[i].url + "/bindings");
+                for (var j = 0; j < response.data.length; j++) {
+                    if (response.data[j].value.state == "main"){
+                        all.push(response.data[j]);
+                    }
                 }
+            }
+            catch {
+
             }
         }
         res.send(all);
