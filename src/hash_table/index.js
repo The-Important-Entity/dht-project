@@ -7,7 +7,7 @@ class HashTable {
         this.table = new Array(this.tableSize).fill(null);;
     }
 
-    getHashCode = function(str) {
+    getHashCode(str) {
         var hash = 0, i, chr;
         if (str.length === 0) {
             return hash;
