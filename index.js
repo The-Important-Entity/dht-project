@@ -8,7 +8,7 @@ class DHT_Node {
         this.router = new Router(table, config);
     }
 
-    async start() {
+    start() {
         try {
             this.router.start();
         }
@@ -18,7 +18,7 @@ class DHT_Node {
         }
     }
 
-    async stop() {
+    stop() {
         try {
             this.router.stop();
         }

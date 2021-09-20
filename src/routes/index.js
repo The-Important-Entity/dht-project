@@ -271,7 +271,7 @@ class Router {
         res.send(all);
     }
 
-    async start() {
+    start() {
         try {
             this.server = this.app.listen(this.port, function(){
                 console.log("DHT Node Listening on port " + this.port.toString());
@@ -283,7 +283,7 @@ class Router {
         }
     }
 
-    async stop() {
+    stop() {
         try {
             this.server.close();
         }
