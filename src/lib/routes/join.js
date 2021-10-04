@@ -18,6 +18,6 @@ module.exports = async function(req, res) {
     this.nodeTable = this.nodeTable.concat(response.data);
     this.sortNodeTable();
     this.FileManager.writeNodes(this.nodeTable);
-    this.notifyAll();
+    await this.notifyAll();
     res.send("Success");
 }

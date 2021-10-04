@@ -43,25 +43,22 @@ class Router {
             this.FileManager.writeNodes(this.nodeTable);
         }
         this.stabilize();
+
+
+        // Higher level endpoints
         this.app.post("/join", join.bind(this));
-        this.app.get("/node_table", getNodeTable.bind(this));
-
-        this.app.post("/notify", notify.bind(this));
-
+        this.app.get("/lookup", lookup.bind(this));
         this.app.post("/insert", insert.bind(this));
+        this.app.post("/delete", postDelete.bind(this));
+        this.app.get("/all_bindings", getAllBindings.bind(this));
 
+        // Lower level endpoints
+        this.app.get("/node_table", getNodeTable.bind(this));
+        this.app.get("/bindings", getBindings.bind(this));
+        this.app.get("/binding", getBinding.bind(this));
         this.app.post("/bind", putbinding.bind(this));
         this.app.delete("/bind", deleteBinding.bind(this));
-
-        this.app.get("/bindings", getBindings.bind(this));
-
-        this.app.get("/lookup", lookup.bind(this));
-        this.app.get("/binding", getBinding.bind(this));
-
-        this.app.post("/delete", postDelete.bind(this));
-
-
-        this.app.get("/all_bindings", getAllBindings.bind(this));
+        this.app.post("/notify", notify.bind(this));
     }
 
     async notifyAll(){
@@ -69,11 +66,11 @@ class Router {
             const data = {
                 "nodeTable": this.nodeTable
             };
-            this.axios.post(this.nodeTable[i].url + "/notify", data);
+            await this.axios.post(this.nodeTable[i].url + "/notify", data);
         }
     }
 
-    async sortNodeTable(){
+    sortNodeTable(){
         this.nodeTable.sort(function(a, b) {
             if (a.id < b.id) {
                 return -1;

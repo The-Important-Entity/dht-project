@@ -32,10 +32,8 @@ const run_tests = async function(){
         await new_node.start();
         dht_nodes.push(new_node);
     }
-    await sleep(1000);
     const tester = new Asserter();
     await run_integration_tests(tester, num_nodes, ID_MAX);
-    await sleep(1000);
     for (var i = 0; i < num_nodes; i++) {
         await dht_nodes[i].stop();
     }
