@@ -80,6 +80,20 @@ class Router {
 
     }
 
+    getNodeIndex(key) {
+        const hash = this.table.getHashCode(key);
+        const bind_index = hash % this.id_max;
+        return this.ceil_bsearch(this.nodeTable, bind_index);
+    }
+
+    getSucc(index) {
+        return (index + 1)%this.nodeTable.length;
+    }
+
+    getPred(index) {
+        return (((index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+    }
+
     start() {
         try {
             this.server = this.app.listen(this.port, function(){
@@ -103,22 +117,30 @@ class Router {
     }
 
     async stabilize() {
-        const node_index = this.ceil_bsearch(this.nodeTable, this.node.id);
-        const node_succ = (node_index + 1)%this.nodeTable.length;
-        const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+        const this_index = this.ceil_bsearch(this.nodeTable, this.node.id);
+        
+        // const node_succ = (node_index + 1)%this.nodeTable.length;
+        // const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+        
+        const this_succ = this.getSucc(this_index);
+        const this_pred = this.getPred(this_index);
 
-        const response_succ = await this.Requester.get(this.nodeTable[node_succ].url + "/bindings");
-        const response_pred = await this.Requester.get(this.nodeTable[node_pred].url + "/bindings");
+        const response_succ = await this.Requester.get(this.nodeTable[this_succ].url + "/bindings");
+        const response_pred = await this.Requester.get(this.nodeTable[this_pred].url + "/bindings");
 
         if (response_succ.error == "none"){
             for (var i = 0; i < response_succ.response.length; i++) {
                 const binding = response_succ.response[i];
 
-                const hash = this.table.getHashCode(binding.key);
-                const bind_index = hash % this.id_max;
-                const node_index = this.ceil_bsearch(this.nodeTable, bind_index);
-                const node_succ = (node_index + 1)%this.nodeTable.length;
-                const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+                // const hash = this.table.getHashCode(binding.key);
+                // const bind_index = hash % this.id_max;
+                // const node_index = this.ceil_bsearch(this.nodeTable, bind_index);
+                // const node_succ = (node_index + 1)%this.nodeTable.length;
+                // const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+
+                const node_index = this.getNodeIndex(binding.key);
+                const node_succ = this.getSucc(node_index);
+                const node_pred = this.getPred(node_index);
                 
                 var insert = false;
                 var replica = false;
@@ -147,10 +169,42 @@ class Router {
 
         if (response_pred.error == "none") {
             for (var i = 0; i < response_pred.response.length; i++) {
-                this.table.insert(response_pred.response[i].key, response_pred.response[i].value);
+                const binding = response_pred.response[i];
+
+                // const hash = this.table.getHashCode(binding.key);
+                // const bind_index = hash % this.id_max;
+                // const node_index = this.ceil_bsearch(this.nodeTable, bind_index);
+                // const node_succ = (node_index + 1)%this.nodeTable.length;
+                // const node_pred = (((node_index - 1)%this.nodeTable.length) + this.nodeTable.length)%this.nodeTable.length;
+
+                const node_index = this.getNodeIndex(binding.key);
+                const node_succ = this.getSucc(node_index);
+                const node_pred = this.getPred(node_index);
+                
+                var insert = false;
+                var replica = false;
+                if (this.nodeTable[node_index].id == this.node.id) {
+                    insert = true;
+                }
+                else if (this.nodeTable[node_succ].id == this.node.id) {
+                    insert = true;
+                    replica = true;
+                }
+                else if (this.nodeTable[node_pred].id == this.node.id) {
+                    insert = true;
+                    replica = true;
+                }
+                if (insert) {
+                    if (replica) {
+                        binding.value.state = 'replica'
+                    }
+                    else {
+                        binding.value.state = 'main'
+                    }
+                    this.table.insert(binding.key, binding.value);
+                }
             }
         }
-
     }
 }
 

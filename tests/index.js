@@ -27,7 +27,8 @@ const run_tests = async function(){
             PORT: 3000 + i,
             URL: "http://localhost:300" + i.toString(),
             ID: id,
-            DATA_DIR: "/tmp/dht/" + id.toString()
+            DATA_DIR: "/tmp/dht/" + id.toString(),
+            SIZE: 10
         })
         await new_node.start();
         dht_nodes.push(new_node);

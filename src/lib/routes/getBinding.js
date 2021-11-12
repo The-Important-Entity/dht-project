@@ -10,5 +10,5 @@ module.exports = async function(req, res) {
         res.send(elm.value);
         return;
     }
-    res.send(null);
+    res.status(400).send(null);
 }
